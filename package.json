@@ -8,6 +8,16 @@
     },
     "dependencies": {
       "vue": "^3.0.0"
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Luyny/vue-simple-arc.git"
+      },
+      "bugs": {
+        "url": "https://github.com/Luyny/vue-simple-arc/issues"
+    
+      },
+    
+      "license": "MIT"
   }
   
