@@ -44,13 +44,13 @@ import SimpleArcComponent from 'vue-simple-arc';
 
 `thickness`  
 **Type**: Number  
-**Required**: true  
+**Required**: false  
 **Default**: 8  
 **Description**: Thickness of the line 
 
 `color`  
 **Type**: String  
-**Required**: true  
+**Required**: false  
 **Default**: '#41b883' 
 **Description**:  Color of the main segment
 

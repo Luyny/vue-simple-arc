@@ -35,12 +35,12 @@ const props = defineProps({
     },
     thickness: {
         type: Number,
-        required: true,
+        required: false,
         default: 8
     },
     color: {
         type: String,
-        required: true,
+        required: false,
         default: '#41b883'
     },
     secondColor: {
