@@ -1,7 +1,7 @@
 {
     "name": "vue-simple-arc",
-    "version": "0.2.0",
-    "description": "Lightweight Vue 3 gauge: SVG half arc and circular progress ring. Responsive, accessible, SSR-friendly, TypeScript, zero dependencies (~1.5 kB gzip).",
+    "version": "0.3.0",
+    "description": "Lightweight Vue 3 gauge: SVG half arc and circular progress ring. Animated, responsive, accessible, SSR-ready, TypeScript, zero dependencies (~1.6 kB gzip).",
     "keywords": [
         "vue",
         "vue3",
@@ -10,6 +10,7 @@
         "arc",
         "progress",
         "progress-ring",
+        "animated",
         "circular-progress",
         "radial-progress",
         "progress-circle",
