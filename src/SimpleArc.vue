@@ -1,5 +1,13 @@
 <template>
-    <div id="container" ref="container" :style="{ width: props.width, position: 'relative', margin: 0, padding: 0 }">
+    <div
+        ref="container"
+        class="simple-arc"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="Math.round(ratio * 100)"
+        :style="{ width: props.width, position: 'relative', margin: 0, padding: 0 }"
+    >
         <svg ref="svgRef" width="100%" :height="height" style="display: block"></svg>
         <div class="slot" :style="slotStyle"><slot></slot></div>
     </div>
@@ -7,8 +15,7 @@
   
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-// Define the props
-const width = ref()
+const svgWidth = ref()
 const height = ref()
 const container = ref()
 
@@ -44,9 +51,12 @@ const props = defineProps({
     secondColor: {
         type: String,
         required: false,
-        default: '#00000033'
+        default: '#80808040'
     }
 });
+
+// Valor limitado a 0..1; NaN/Infinity viram 0
+const ratio = computed(() => Number.isFinite(props.value) ? Math.min(1, Math.max(0, props.value)) : 0);
 
 const slotStyle = computed(() => ({
     position: 'absolute' as const,
@@ -77,16 +87,16 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
 function updateArc() {
 
     if (!container.value) return;
-    width.value = container.value.clientWidth
-    height.value = width.value / 2 + props.thickness/2
-    const degree = props.fullCircle ? props.value * 360 : props.value * 180;
+    svgWidth.value = container.value.clientWidth
+    height.value = svgWidth.value / 2 + props.thickness/2
+    const degree = props.fullCircle ? ratio.value * 360 : ratio.value * 180;
 
     if (props.fullCircle) {
-        height.value = width.value
+        height.value = svgWidth.value
     }
 
     const mainPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    mainPath.setAttribute("d", describeArc(width.value/2 , width.value /2, width.value/2 -props.thickness/2, 0, Math.min(359.99,degree)));
+    mainPath.setAttribute("d", describeArc(svgWidth.value/2 , svgWidth.value /2, svgWidth.value/2 -props.thickness/2, 0, Math.min(359.99,degree)));
     mainPath.setAttribute("fill", "none");
     mainPath.setAttribute("stroke", props.color);
     mainPath.setAttribute("stroke-width", props.thickness.toString());
@@ -94,7 +104,7 @@ function updateArc() {
     
     const secondaryArcSize = props.fullCircle ? 360 : 180
     const secondaryPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    secondaryPath.setAttribute("d", describeArc(width.value/2 , width.value /2, width.value/2 -props.thickness/2, 0, Math.min(359.99,secondaryArcSize)));
+    secondaryPath.setAttribute("d", describeArc(svgWidth.value/2 , svgWidth.value /2, svgWidth.value/2 -props.thickness/2, 0, Math.min(359.99,secondaryArcSize)));
     secondaryPath.setAttribute("fill", "none");
     secondaryPath.setAttribute("stroke", props.secondColor);
     secondaryPath.setAttribute("stroke-width", (props.thickness/5).toString());
@@ -103,7 +113,10 @@ function updateArc() {
     if (svgRef.value) {
         svgRef.value.innerHTML = '';
         svgRef.value.appendChild(secondaryPath);
-        svgRef.value.appendChild(mainPath);
+        // Em 0 o linecap arredondado desenharia um ponto
+        if (ratio.value > 0) {
+            svgRef.value.appendChild(mainPath);
+        }
     }
 }
 let frame = 0;
@@ -114,6 +127,8 @@ function scheduleUpdate() {
 
 let observer: ResizeObserver | undefined;
 onMounted(() => {
+    updateArc();
+    if (typeof ResizeObserver === 'undefined') return;
     observer = new ResizeObserver(scheduleUpdate);
     if (container.value) {
         observer.observe(container.value);
@@ -125,6 +140,6 @@ onUnmounted(() => {
     cancelAnimationFrame(frame);
 });
 
-watch(() => [ props.value, props.fullCircle, props.thickness, props.color, props.secondColor, ], updateArc, { deep: true });
+watch(() => [ ratio.value, props.fullCircle, props.thickness, props.color, props.secondColor ], updateArc);
 
 </script>
