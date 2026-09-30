@@ -1,4 +1,4 @@
-import SimpleArcComponent from './SimpleArcComponent.vue';
+import SimpleArc from './SimpleArc.vue';
 
-export { SimpleArcComponent };
-export default SimpleArcComponent;
+export { SimpleArc, SimpleArc as SimpleArcComponent };
+export default SimpleArc;

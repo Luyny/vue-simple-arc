@@ -1,17 +1,20 @@
-# SimpleArcComponent
+# SimpleArc
 
 ## Installation
 `npm i vue-simple-arc`
 
 ## Import
 ```js
-import SimpleArcComponent from 'vue-simple-arc';
+import { SimpleArc } from 'vue-simple-arc';
+// or: import SimpleArc from 'vue-simple-arc';
 ```
+
+> `SimpleArcComponent` is still exported as an alias of `SimpleArc` for backward compatibility.
 
 ## Usage 
 ```html
-<SimpleArcComponent
-    v-model="percentage"
+<SimpleArc
+    :value="percentage"
     width='350px'
     :fullCircle="false"
     :thickness="8"
@@ -19,7 +22,7 @@ import SimpleArcComponent from 'vue-simple-arc';
     secondColor="#00000033"
 >
     <!-- slot -->
-</SimpleArcComponent>
+</SimpleArc>
 ```  
 
 
@@ -36,7 +39,7 @@ import SimpleArcComponent from 'vue-simple-arc';
 **Required**: true  
 **Description**: Range between 0 and 1, representing the percentage of the arc
 
-`Fullcircle`  
+`fullCircle`  
 **Type**: Boolean  
 **Required**: false  
 **Default**: false  
