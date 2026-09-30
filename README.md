@@ -1,8 +1,8 @@
 # SimpleArc
 
-Lightweight Vue 3 SVG arc / circle progress component. Animated, responsive, accessible, server-side rendered and with zero runtime dependencies (~1.6 kB gzip).
+Lightweight Vue 3 SVG arc / circle progress component. Animated, responsive, accessible, SSR-ready and with zero runtime dependencies (~1.6 kB gzip).
 
-![vue-simple-arc demo: animated value, thickness, responsive width, dark mode and colors](https://raw.githubusercontent.com/Luyny/vue-simple-arc/master/docs/demo.gif)
+![vue-simple-arc demo: animated value, thickness, custom track, responsive width, dark mode and colors](https://raw.githubusercontent.com/Luyny/vue-simple-arc/master/docs/demo.gif)
 
 ## Installation
 `npm i vue-simple-arc`
@@ -12,8 +12,6 @@ Lightweight Vue 3 SVG arc / circle progress component. Animated, responsive, acc
 import { SimpleArc } from 'vue-simple-arc';
 // or: import SimpleArc from 'vue-simple-arc';
 ```
-
-> `SimpleArcComponent` is still exported as an alias of `SimpleArc` for backward compatibility.
 
 ### TypeScript
 
@@ -49,11 +47,14 @@ import type { SimpleArcProps } from 'vue-simple-arc';
 | `trackThickness` | Number | no | `thickness / 5` | Background line (track) thickness in px. |
 | `color` | String | no | `'#41b883'` | Color of the progress line. |
 | `trackColor` | String | no | `'#80808040'` | Color of the background line. The default is visible on light and dark backgrounds. |
-| `secondColor` | String | no | — | **Deprecated**, use `trackColor`. Still works as an alias and logs a warning once. |
+
+## Slot
+
+The default slot is placed at the bottom center of the half arc, or at the center of the full circle. It inherits the parent's font size and color.
 
 ## Animation
 
-Value changes animate with a CSS transition on the progress line, including from and back to `0`. Customize it with CSS variables on the component or any ancestor:
+Value changes animate with a CSS transition on the progress line. Customize it with CSS variables on the component or any ancestor:
 
 | Variable | Default | Description |
 |---|---|---|
@@ -70,14 +71,10 @@ The animation is turned off automatically when the user prefers reduced motion. 
 
 The arc is fully rendered on the server, so there is no empty SVG waiting for hydration. Before the component is mounted it draws with a 200px reference width and scales it to the container: in larger containers the line looks proportionally thicker, and the height can shift by a few pixels (proportional to `thickness`) once hydration measures the real width.
 
-## Migrating from 0.2
-
-No breaking changes. `secondColor` still works but is deprecated: rename it to `trackColor`. The track thickness can now be set with `trackThickness` (the default stays `thickness / 5`).
-
-## Slot
-
-The default slot is placed at the bottom center of the half arc, or at the center of the full circle. It inherits the parent's font size and color.
-
 ## Accessibility
 
 The root element has `role="progressbar"`, `aria-valuemin="0"`, `aria-valuemax="100"` and `aria-valuenow` (the value as a percentage). Pass `aria-label` or `aria-labelledby` to describe what is being measured.
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/Luyny/vue-simple-arc/blob/master/CHANGELOG.md).
