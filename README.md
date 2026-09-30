@@ -2,6 +2,8 @@
 
 Lightweight Vue 3 SVG arc / circle progress component. Responsive, accessible and with zero runtime dependencies (~1.5 kB gzip).
 
+![vue-simple-arc demo: animated value, thickness, responsive width, dark mode and colors](https://raw.githubusercontent.com/Luyny/vue-simple-arc/master/docs/demo.gif)
+
 ## Installation
 `npm i vue-simple-arc`
 
