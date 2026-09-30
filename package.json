@@ -1,23 +1,55 @@
 {
     "name": "vue-simple-arc",
     "version": "0.1.4",
-    "main": "index.js",
-    "private": false,
-    "scripts": {
-        "build": "rollup -c"
-    },
-    "dependencies": {
-      "vue": "^3.0.0"
-    },
+    "description": "Componente Vue 3 leve de arco/círculo de progresso em SVG, responsivo e sem dependências.",
+    "keywords": [
+        "vue",
+        "vue3",
+        "arc",
+        "gauge",
+        "progress",
+        "circle",
+        "svg",
+        "component"
+    ],
+    "author": "Luyny",
+    "license": "MIT",
+    "homepage": "https://github.com/Luyny/vue-simple-arc#readme",
     "repository": {
         "type": "git",
         "url": "https://github.com/Luyny/vue-simple-arc.git"
-      },
-      "bugs": {
+    },
+    "bugs": {
         "url": "https://github.com/Luyny/vue-simple-arc/issues"
-    
-      },
-    
-      "license": "MIT"
-  }
-  
+    },
+    "type": "module",
+    "main": "./dist/vue-simple-arc.cjs",
+    "module": "./dist/vue-simple-arc.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/vue-simple-arc.js",
+            "require": "./dist/vue-simple-arc.cjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "sideEffects": false,
+    "scripts": {
+        "build": "vite build",
+        "prepublishOnly": "npm run build"
+    },
+    "peerDependencies": {
+        "vue": "^3.3.0"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^6.0.9",
+        "@vue/language-core": "^3.3.11",
+        "typescript": "~5.9.3",
+        "vite": "^8.3.1",
+        "vite-plugin-dts": "^5.1.1",
+        "vue": "^3.5.43"
+    }
+}

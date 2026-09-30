@@ -1,14 +1,12 @@
 <template>
-    <div id="container" ref="container" :style="{width: props.width}">
-        <svg ref="svgRef" width="100%" :height="height"></svg>
-        <div class="slot" :class="{'full':fullCircle}"><slot></slot></div>
+    <div id="container" ref="container" :style="{ width: props.width, position: 'relative', margin: 0, padding: 0 }">
+        <svg ref="svgRef" width="100%" :height="height" style="display: block"></svg>
+        <div class="slot" :style="slotStyle"><slot></slot></div>
     </div>
 </template>
   
 <script setup lang="ts">
-import { ref, watch, onMounted, defineProps, onUnmounted } from 'vue';
-// @ts-expect-error any-type
-import { debounce } from 'lodash';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 // Define the props
 const width = ref()
 const height = ref()
@@ -49,6 +47,13 @@ const props = defineProps({
         default: '#00000033'
     }
 });
+
+const slotStyle = computed(() => ({
+    position: 'absolute' as const,
+    right: '50%',
+    bottom: props.fullCircle ? '50%' : 0,
+    transform: props.fullCircle ? 'translateX(50%) translateY(50%)' : 'translateX(50%)'
+}));
 
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
     const angleInRadians = (angleInDegrees - (180 - startAngle)) * Math.PI / 180.0;
@@ -101,44 +106,25 @@ function updateArc() {
         svgRef.value.appendChild(mainPath);
     }
 }
+let frame = 0;
+function scheduleUpdate() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateArc);
+}
+
+let observer: ResizeObserver | undefined;
 onMounted(() => {
-      const updateArcDebounced = debounce(updateArc, 50);
-      const observer = new ResizeObserver(() => {
-        updateArcDebounced();
-      });
-
-      if (container.value) {
+    observer = new ResizeObserver(scheduleUpdate);
+    if (container.value) {
         observer.observe(container.value);
-      }
+    }
+});
 
-      onUnmounted(() => {
-        observer.disconnect();
-      });
-    });
+onUnmounted(() => {
+    observer?.disconnect();
+    cancelAnimationFrame(frame);
+});
 
 watch(() => [ props.value, props.fullCircle, props.thickness, props.color, props.secondColor, ], updateArc, { deep: true });
 
 </script>
-
-<style scoped lang="scss">
-#container {
-    position: relative;
-    margin: 0;
-    padding: 0;
-    font-size: 0;
-
-    .slot {
-        font-size: 1rem;
-        position: absolute;
-        right: 50%;
-        transform: translateX(50%);
-        bottom: 0;
-
-        &.full {
-            bottom: 50%;
-            transform: translateX(50%) translateY(50%);
-        }
-    }
-
-}
-</style>
