@@ -8,55 +8,124 @@
         :aria-valuenow="Math.round(ratio * 100)"
         :style="{ width: props.width, position: 'relative', margin: 0, padding: 0 }"
     >
-        <svg ref="svgRef" width="100%" :height="height" style="display: block"></svg>
+        <svg width="100%" :viewBox="`0 0 ${size} ${height}`" style="display: block">
+            <path
+                :d="arcPath"
+                fill="none"
+                :stroke="resolvedTrackColor"
+                :stroke-width="resolvedTrackThickness"
+                stroke-linecap="round"
+            />
+            <!-- Sempre renderizado para a transição funcionar a partir de 0 e de volta a 0 -->
+            <path
+                :d="arcPath"
+                fill="none"
+                :stroke="props.color"
+                :stroke-width="props.thickness"
+                stroke-linecap="round"
+                :pathLength="DASH"
+                :stroke-dasharray="`${DASH} ${DASH}`"
+                :stroke-opacity="ratio > 0 ? 1 : 0"
+                :style="{ strokeDashoffset: DASH * (1 - ratio), transition }"
+            />
+        </svg>
         <div class="slot" :style="slotStyle"><slot></slot></div>
     </div>
 </template>
-  
-<script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-const svgWidth = ref()
-const height = ref()
-const container = ref()
 
-const svgRef = ref<SVGElement>();
+<script lang="ts">
+import type { PropType } from 'vue';
 
-const startAngle = 0
+declare const process: { env: Record<string, string | undefined> };
 
-const props = defineProps({
-    width: {
-        type: String,
-        required: false,
-        default: '100%'
-    },
-    value: {
-        type: Number,
-        required: true
-    },
-    fullCircle: {
-        type: Boolean,
-        required: false,
-        default: false
-    },
-    thickness: {
-        type: Number,
-        required: false,
-        default: 8
-    },
-    color: {
-        type: String,
-        required: false,
-        default: '#41b883'
-    },
-    secondColor: {
-        type: String,
-        required: false,
-        default: '#80808040'
+// process.env.NODE_ENV é substituído pelo bundler do consumidor (o modo lib do Vite não mexe nele);
+// sem bundler, process não existe e o acesso lança erro
+const isDev = (() => {
+    try {
+        return process.env.NODE_ENV !== 'production';
+    } catch {
+        return false;
     }
+})();
+
+// Escopo de módulo: avisa uma vez por carregamento do módulo, não por instância
+let warnedSecondColor = false;
+
+export interface SimpleArcProps {
+    /** Progresso entre 0 e 1 */
+    value: number;
+    width?: string;
+    fullCircle?: boolean;
+    thickness?: number;
+    /** Espessura da trilha; padrão thickness / 5 */
+    trackThickness?: number;
+    color?: string;
+    trackColor?: string;
+    /** @deprecated use trackColor */
+    secondColor?: string;
+}
+</script>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+// Declaração em runtime: o build de produção remove type/required de props declaradas só por tipo
+const props = defineProps({
+    value: { type: Number, required: true },
+    width: { type: String, default: '100%' },
+    fullCircle: { type: Boolean, default: false },
+    thickness: { type: Number, default: 8 },
+    trackThickness: { type: Number as PropType<number | undefined>, default: undefined },
+    color: { type: String, default: '#41b883' },
+    trackColor: { type: String as PropType<string | undefined>, default: undefined },
+    secondColor: { type: String as PropType<string | undefined>, default: undefined }
 });
+
+// Largura usada no SSR e antes da medição; depois do mount, 1 unidade do viewBox = 1px
+const FALLBACK_SIZE = 200;
+// pathLength normalizado: o progresso não depende do tamanho, então resize não anima
+const DASH = 100;
+
+if (isDev && props.secondColor !== undefined && !warnedSecondColor) {
+    warnedSecondColor = true;
+    console.warn('[vue-simple-arc] a prop "secondColor" está obsoleta; use "trackColor".');
+}
+
+const container = ref<HTMLDivElement>();
+const size = ref(FALLBACK_SIZE);
+const reducedMotion = ref(false);
 
 // Valor limitado a 0..1; NaN/Infinity viram 0
 const ratio = computed(() => Number.isFinite(props.value) ? Math.min(1, Math.max(0, props.value)) : 0);
+
+const resolvedTrackThickness = computed(() => props.trackThickness ?? props.thickness / 5);
+const resolvedTrackColor = computed(() => props.trackColor ?? props.secondColor ?? '#80808040');
+
+// Linha mais grossa define o recuo, para nenhuma das duas ser cortada na borda
+const stroke = computed(() => Math.max(props.thickness, resolvedTrackThickness.value));
+const height = computed(() => props.fullCircle ? size.value : size.value / 2 + stroke.value / 2);
+
+// Da esquerda no sentido horário; o círculo são dois meios arcos (um arco com extremos iguais não é desenhado)
+const arcPath = computed(() => {
+    const center = round(size.value / 2);
+    const radius = round(Math.max(0, center - stroke.value / 2));
+    const left = `${round(center - radius)} ${center}`;
+    const right = `${round(center + radius)} ${center}`;
+    const half = (to: string) => `A ${radius} ${radius} 0 0 1 ${to}`;
+    return props.fullCircle ? `M ${left} ${half(right)} ${half(left)}` : `M ${left} ${half(right)}`;
+});
+
+function round(n: number) {
+    return Math.round(n * 1000) / 1000;
+}
+
+// Ao chegar em 0, esconde o ponto do linecap só depois que o arco terminou de recolher
+const transition = computed(() => {
+    if (reducedMotion.value) return 'none';
+    const duration = 'var(--simple-arc-duration, 0.4s)';
+    const dash = `stroke-dashoffset ${duration} var(--simple-arc-easing, ease)`;
+    return ratio.value > 0 ? dash : `${dash}, stroke-opacity 0s linear ${duration}`;
+});
 
 const slotStyle = computed(() => ({
     position: 'absolute' as const,
@@ -65,81 +134,20 @@ const slotStyle = computed(() => ({
     transform: props.fullCircle ? 'translateX(50%) translateY(50%)' : 'translateX(50%)'
 }));
 
-function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
-    const angleInRadians = (angleInDegrees - (180 - startAngle)) * Math.PI / 180.0;
-    return {
-        x: centerX + (radius * Math.cos(angleInRadians)),
-        y: centerY + (radius * Math.sin(angleInRadians))
-    };
-}
-
-function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number) {
-    const start = polarToCartesian(x, y, radius, endAngle);
-    const end = polarToCartesian(x, y, radius, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-
-    return [
-        "M", start.x, start.y,
-        "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
-    ].join(" ");
-}
-
-function updateArc() {
-
-    if (!container.value) return;
-    svgWidth.value = container.value.clientWidth
-    height.value = svgWidth.value / 2 + props.thickness/2
-    const degree = props.fullCircle ? ratio.value * 360 : ratio.value * 180;
-
-    if (props.fullCircle) {
-        height.value = svgWidth.value
-    }
-
-    const mainPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    mainPath.setAttribute("d", describeArc(svgWidth.value/2 , svgWidth.value /2, svgWidth.value/2 -props.thickness/2, 0, Math.min(359.99,degree)));
-    mainPath.setAttribute("fill", "none");
-    mainPath.setAttribute("stroke", props.color);
-    mainPath.setAttribute("stroke-width", props.thickness.toString());
-    mainPath.setAttribute("stroke-linecap", "round");
-    
-    const secondaryArcSize = props.fullCircle ? 360 : 180
-    const secondaryPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    secondaryPath.setAttribute("d", describeArc(svgWidth.value/2 , svgWidth.value /2, svgWidth.value/2 -props.thickness/2, 0, Math.min(359.99,secondaryArcSize)));
-    secondaryPath.setAttribute("fill", "none");
-    secondaryPath.setAttribute("stroke", props.secondColor);
-    secondaryPath.setAttribute("stroke-width", (props.thickness/5).toString());
-    secondaryPath.setAttribute("stroke-linecap", "round");
-
-    if (svgRef.value) {
-        svgRef.value.innerHTML = '';
-        svgRef.value.appendChild(secondaryPath);
-        // Em 0 o linecap arredondado desenharia um ponto
-        if (ratio.value > 0) {
-            svgRef.value.appendChild(mainPath);
-        }
-    }
-}
-let frame = 0;
-function scheduleUpdate() {
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(updateArc);
+// Container oculto (display: none) mede 0; mantém a última largura válida
+function measure() {
+    const width = container.value?.clientWidth ?? 0;
+    if (width > 0) size.value = width;
 }
 
 let observer: ResizeObserver | undefined;
 onMounted(() => {
-    updateArc();
-    if (typeof ResizeObserver === 'undefined') return;
-    observer = new ResizeObserver(scheduleUpdate);
-    if (container.value) {
-        observer.observe(container.value);
-    }
+    measure();
+    reducedMotion.value = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+    if (typeof ResizeObserver === 'undefined' || !container.value) return;
+    observer = new ResizeObserver(measure);
+    observer.observe(container.value);
 });
 
-onUnmounted(() => {
-    observer?.disconnect();
-    cancelAnimationFrame(frame);
-});
-
-watch(() => [ ratio.value, props.fullCircle, props.thickness, props.color, props.secondColor ], updateArc);
-
+onUnmounted(() => observer?.disconnect());
 </script>
